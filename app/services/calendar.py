@@ -1,19 +1,30 @@
-from typing import Tuple, Optional
+from typing import Tuple, Optional, List
 from datetime import datetime
 from app.services import data
 from app.services.user_type import UserType
 from app.services.model import InterviewSchedule
 from app.services.utils import iter_time_frame
+from app.types import TimeFrameType, NameConstraintType, TimeConstraintType
 
 
 class InterviewCalendar:
-    def __init__(self, interview_duration=1):
+    def __init__(self, interview_duration: int=1,
+                 name_constraints: Optional[List[NameConstraintType]]=None,
+                 time_frame_constraints: Optional[List[TimeConstraintType]]=None):
         self.delta = interview_duration
+        self.name_constraints = name_constraints or []
+        self.time_frame_constraints = time_frame_constraints or []
 
-    def iter_time_frame(self, time_frame: Tuple[datetime, datetime]):
+    def check_constraints(self, name, time_frame):
+        [f(name) for f in self.name_constraints]
+        [f(time_frame) for f in self.time_frame_constraints]
+
+    def iter_time_frame(self, time_frame: TimeFrameType):
         return iter_time_frame(time_frame, self.delta)
 
-    def allocate(self, name: str, user_type: UserType, time_frame: Tuple[datetime, datetime]):
+    def allocate(self, name: str, user_type: UserType, time_frame: TimeFrameType):
+        self.check_constraints(name, time_frame)
+
         allocated = []
         for dt in self.iter_time_frame(time_frame):
             schedule_data = data.create_schedule(name, user_type.value, dt, self.delta)
@@ -21,7 +32,7 @@ class InterviewCalendar:
             allocated.append(schedule)
         return allocated
 
-    def deallocate(self, name: str, user_type: UserType, time_frame: Tuple[datetime, datetime]):
+    def deallocate(self, name: str, user_type: UserType, time_frame: TimeFrameType):
         begins = [dt for dt in self.iter_time_frame(time_frame)]
         data.delete_schedules([name], [user_type.value], begins)
 

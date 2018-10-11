@@ -87,7 +87,7 @@ def set_test_mode(mode):
     global _test_mode
     _test_mode = mode
     if is_db_initialized():
-        logger.warning('Database is initialized before setting test mode!')
+        logger.warning('Database is initialized before setting the test mode!')
 
 
 def init(uri):
