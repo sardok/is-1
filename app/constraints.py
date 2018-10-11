@@ -16,7 +16,7 @@ def time_frame_hour(time_frame: TimeFrameType):
 
 def time_frame_weekdays(time_frame: TimeFrameType):
     def is_good_day(dt: datetime):
-        return 1 >= dt.isoweekday() <= 5
+        return 1 <= dt.isoweekday() <= 5
 
     if not all([is_good_day(x) for x in time_frame]):
         raise RuntimeError('Only weekdays are allowed for scheduling.')

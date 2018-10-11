@@ -63,3 +63,13 @@ def test_long_name():
     name = 'a' * 255
     with pytest.raises(RuntimeError):
         constraints.long_name(name)
+
+
+def test_valid_time_frame():
+    time_frame_constraints = [
+        constraints.time_frame_hour,
+        constraints.time_frame_weekdays,
+        constraints.time_frame_sanity,
+    ]
+    time_frame = (datetime(2018, 10, 10, 9), datetime(2018, 10, 10, 18))
+    [f(time_frame) for f in time_frame_constraints]
