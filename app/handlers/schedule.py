@@ -1,7 +1,9 @@
-from flask import current_app, g, request, Blueprint, jsonify
-
-from app.schedule_utils import query_by_names, query_by_user_type, schedule, intersect_interview_schedules
+import operator
+from flask import current_app, request, Blueprint, jsonify
+from app.schedule_utils import query_by_names, query_by_user_type, query_all as query_all_
+from app.schedule_utils import schedule, intersect_interview_schedules
 from app.services import UserType
+from app import get_interview_calendar
 
 api = Blueprint('schedule', __name__)
 
@@ -9,36 +11,48 @@ api = Blueprint('schedule', __name__)
 @api.route('/interviewer', methods=['POST'])
 def schedule_interviewer():
     payload = request.get_json()
-    scheduled = schedule(UserType.Interviewer, payload, g.interivew_calendar, current_app.logger)
-    current_app.info('Create %d entries for %s', len(scheduled), payload['name'])
+    calendar = get_interview_calendar()
+    scheduled = schedule(UserType.Interviewer, payload, calendar, current_app.logger)
+    current_app.logger.info('Create %d entries for %s', len(scheduled), payload['name'])
+    return jsonify(scheduled)
 
 
 @api.route('/candidate', methods=['POST'])
 def schedule_candidate():
     payload = request.get_json()
-    scheduled = schedule(UserType.Candidate, payload, g.interview_calendar, current_app.logger)
-    current_app.info('Create %d entries for %s', len(scheduled), payload['name'])
+    calendar = get_interview_calendar()
+    scheduled = schedule(UserType.Candidate, payload, calendar, current_app.logger)
+    current_app.logger.info('Create %d entries for %s', len(scheduled), payload['name'])
+    return jsonify(scheduled)
 
 
-@api.route('/', method=['GET'])
+@api.route('/query', methods=['GET'])
 def query():
     interviewers = request.args.getlist('interviewer')
     candidates = request.args.getlist('candidate')
-    interviewers_schedules, candidates_schedules = query_by_names(interviewers, candidates, g.interview_calendar)
-    res = intersect_interview_schedules(interviewers_schedules, candidates_schedules)
-    return jsonify(res)
+    current_app.logger.info('Requested interviewers: %s, candidates: %s', interviewers, candidates)
+    calendar = get_interview_calendar()
+    interviewers_schedules, candidates_schedules = query_by_names(interviewers, candidates, calendar)
+    schedules = intersect_interview_schedules(interviewers_schedules, candidates_schedules)
+    return jsonify(sorted(schedules, key=operator.itemgetter('begin')))
 
 
-@api.route('/interviewers', method=['GET'])
+@api.route('/interviewers', methods=['GET'])
+def query_interviewers():
+    calendar = get_interview_calendar()
+    schedules = query_by_user_type(UserType.Interviewer, calendar)
+    return jsonify(sorted(schedules, key=operator.itemgetter('begin')))
+
+
+@api.route('/candidates', methods=['GET'])
 def query_candidates():
-    return query_by_user_type(UserType.Interviewer, g.interview_calendar)
+    calendar = get_interview_calendar()
+    schedules = query_by_user_type(UserType.Candidate, calendar)
+    return jsonify(sorted(schedules, key=operator.itemgetter('begin')))
 
 
-@api.route('/candidates', method=['GET'])
-def query_candidates():
-    return query_by_user_type(UserType.Candidate, g.interview_calendar)
-
-
-@api.route('/all', method=['GET'])
+@api.route('/all', methods=['GET'])
 def query_all():
-    return g.interviewer_calendar.query()
+    calendar = get_interview_calendar()
+    schedules = query_all_(calendar)
+    return jsonify(sorted(schedules, key=operator.itemgetter('begin')))
