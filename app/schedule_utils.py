@@ -17,13 +17,22 @@ def query_by_names(interviewers, candidates, interview_calendar):
     Executes query by given interviewer and/or candidate names.
     Returns intersection by schedule times.
     """
-    interviewers_schedules = [interview_calendar.query(interviewer, UserType.Interviewer)
+    interviewers_schedules = [list(interview_calendar.query(interviewer, UserType.Interviewer))
                               for interviewer in interviewers]
-    candidates_schedules = [interview_calendar.query(candidate, UserType.Candidate)
+    candidates_schedules = [list(interview_calendar.query(candidate, UserType.Candidate))
                             for candidate in candidates]
     return interviewers_schedules, candidates_schedules
 
 
+def to_serializable(f):
+    @functools.wraps(f)
+    def inner(*a, **kw):
+        xs = f(*a, **kw)
+        return [x.as_dict() for x in xs]
+    return inner
+
+
+@to_serializable
 def intersect_interview_schedules(
         interviewers_schedules: List[List[InterviewSchedule]],
         candidates_schedules: List[List[InterviewSchedule]]):
@@ -36,10 +45,17 @@ def intersect_interview_schedules(
         return interviewer_intersections or candidate_intersections
 
 
+@to_serializable
 def query_by_user_type(user_type: UserType, interview_calendar):
     return interview_calendar.query(user_type=user_type)
 
 
+@to_serializable
+def query_all(interview_calendar):
+    return interview_calendar.query()
+
+
+@to_serializable
 def schedule(user_type, payload, interview_calendar, logger):
     name = payload['name']
     schedules = payload.get('schedules', [])
@@ -49,7 +65,7 @@ def schedule(user_type, payload, interview_calendar, logger):
         try:
             time_frame = parse_schedule_data(schedule[:2])
             allocated = interview_calendar.allocate(name, user_type, time_frame)
-            ret.append(allocated)
+            ret.extend(allocated)
         except:
             logger.error('Invalid schedule %s (name: %s)', schedule, name)
             raise

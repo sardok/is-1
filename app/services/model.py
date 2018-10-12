@@ -13,3 +13,11 @@ class InterviewSchedule(_InterviewSchedule):
         begin = data['begin']
         end = begin + timedelta(hours=data['duration'])
         return cls(data['name'], user_type, begin, end)
+
+    def as_dict(self):
+        return {
+            'name': self.name,
+            'type': self.type.name,
+            'begin': self.begin,
+            'end': self.end
+        }

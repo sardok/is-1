@@ -88,7 +88,7 @@ def test_intersect_interview_schedules_1():
     ]
     res = intersect_interview_schedules(interviewers, [])
     assert len(res) == 4
-    assert [x.name for x in res] == ['user_1', 'user_1', 'user_2', 'user_2']
+    assert [x['name'] for x in res] == ['user_1', 'user_1', 'user_2', 'user_2']
 
 
 def test_intersect_interview_schedules_2():
@@ -105,7 +105,7 @@ def test_intersect_interview_schedules_2():
     ]
     res = intersect_interview_schedules([], candidates)
     assert len(res) == 2
-    assert res[0].begin == datetime(2018, 10, 11, 14)
+    assert res[0]['begin'] == datetime(2018, 10, 11, 14)
 
 
 def test_intersect_interview_schedules_3():
@@ -130,8 +130,8 @@ def test_intersect_interview_schedules_3():
     ]
     res = intersect_interview_schedules(interviewers, candidates)
     assert len(res) == 3
-    assert [x.name for x in res] == ['interviewer_1', 'interviewer_2', 'candidate_1']
-    assert {x.begin for x in res} == {datetime(2018, 10, 11, 17)}
+    assert [x['name'] for x in res] == ['interviewer_1', 'interviewer_2', 'candidate_1']
+    assert {x['begin'] for x in res} == {datetime(2018, 10, 11, 17)}
 
 
 def test_intersect_interview_schedules_4():
