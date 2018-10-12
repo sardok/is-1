@@ -4,4 +4,4 @@ from app.types import TimeFrameType
 
 
 def parse_schedule_data(schedule: Tuple[str, str]) -> TimeFrameType:
-    return tuple(map(dt_parser.parse, schedule))
+    return tuple([dt_parser.parse(x, dayfirst=True) for x in schedule])
